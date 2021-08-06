@@ -1,6 +1,6 @@
 // Write your "projects" router here!
 const express = require('express');
-
+const {validateProjectId,validateName,validateDescript,validateCompleted} = require('./projects-middleware')
 const Projects = require("./projects-model")
 
 const router= express.Router()
@@ -12,52 +12,31 @@ router.get('/',(req,res)=>{
    })
 })
 //GET with ID
-router.get('/:id', async (req,res)=>{
-    const{id}=req.params
+router.get('/:id', validateProjectId,async (req,res,next)=>{
     try{
-        const project= await Projects.get(id)
-        if(!project){
-            res.status(404).json({message:"This is not an ID"})
-        }else{
-            res.json(project)
-        }
-    }catch{
-        res.status(500).json({message:"ERROR NOOOO!!!"})
+        res.json(req.project)
+    }catch(err){
+        next(err)
     }    
 })
 //POST
-router.post('/',async(req,res)=>{
-    const {name,description} = req.body
+router.post('/',validateName, validateDescript, validateCompleted ,async(req,res,next)=>{
     try{
-    if(!name || !description){
-        res.status(400).json({message:'please provide name and description for the project'})
-    }else{
-        const project = await Projects.insert(req.body)
+        const project = await Projects.insert({name:req.name,description:req.description,completed:req.completed})
         res.status(200).json(project)
-    }
     }catch(err){
-        res.status(500).json({message:"no server"})
+        next(err)
     }
 })
 //PUT ID -No clue why this is failing 
-router.put('/:id',async (req,res)=>{
+router.put('/:id',validateProjectId,validateName, validateDescript, validateCompleted  ,async (req,res,next)=>{
     const{id}=req.params
-    const {name,description,completed} = req.body
     try{
-        const project= await Projects.get(id)
-        if(!name || !description || !completed){
-            res.status(400).json({message:'please provide name,description and if its completed for the project'})
-        }else{
-            if(!project){
-                res.status(404).json({message:"could not find that ID "})
-            }else{
-                const updatedProject = await Projects.update(id,req.body)
-                res.json(updatedProject)
-            }
-        }
-
+            const updatedProject = await Projects.update(id,req.body)
+            res.json(updatedProject)
+            
     }catch(err){
-        res.status(500).json({message:"Mean Error"})
+        next(err)
     }
 })
 
@@ -91,5 +70,11 @@ router.get("/:id/actions",async(req,res)=>{
     }
 
 })
+router.use((err,req,res,next)=>{
+    res.status(err.status || 500).json({
+      Message:"something went wrong",
+
+    })
+  })
 
 module.exports = router

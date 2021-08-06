@@ -42,7 +42,7 @@ router.post('/',async (req,res)=>{
 //PUT ID
 router.put('/:id',async(req,res)=>{
     const {id} = req.params
-    const {description,notes,project_id} = req.body;
+    const {description,notes,project_id } = req.body;
     try{
         const action= await Action.get(id);
         if(!notes || !description || !project_id ){
