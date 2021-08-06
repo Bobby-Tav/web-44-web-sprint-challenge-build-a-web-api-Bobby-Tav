@@ -1,6 +1,6 @@
 // Write your "projects" router here!
 const express = require('express');
-const {validateProjectId,validateName,validateDescript,validateCompleted} = require('./projects-middleware')
+const {validateProjectId,validateName,validateDescript,validateCompleted,validateProject} = require('./projects-middleware')
 const Projects = require("./projects-model")
 
 const router= express.Router()
@@ -20,7 +20,7 @@ router.get('/:id', validateProjectId,async (req,res,next)=>{
     }    
 })
 //POST
-router.post('/',validateName, validateDescript, validateCompleted ,async(req,res,next)=>{
+router.post('/' ,validateProject, async(req,res,next)=>{
     try{
         const project = await Projects.insert({name:req.name,description:req.description,completed:req.completed})
         res.status(200).json(project)
@@ -29,11 +29,12 @@ router.post('/',validateName, validateDescript, validateCompleted ,async(req,res
     }
 })
 //PUT ID -No clue why this is failing 
-router.put('/:id',validateProjectId,validateName, validateDescript, validateCompleted  ,async (req,res,next)=>{
+router.put('/:id',validateProjectId,validateProject ,async (req,res,next)=>{
     const{id}=req.params
     try{
-            const updatedProject = await Projects.update(id,req.body)
-            res.json(updatedProject)
+         await Projects.update(id,{name:req.name,description:req.description, completed:req.completed})
+        const updatedProject = await Projects.get(id)    
+        res.json(updatedProject)
             
     }catch(err){
         next(err)
