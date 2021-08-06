@@ -1,15 +1,16 @@
 // Write your "projects" router here!
 const express = require('express');
-const {validateProjectId,validateName,validateDescript,validateCompleted,validateProject} = require('./projects-middleware')
+const {validateProjectId,validateProject} = require('./projects-middleware')
 const Projects = require("./projects-model")
 
 const router= express.Router()
 //GET
-router.get('/',(req,res)=>{
+router.get('/',(req,res,next)=>{
    Projects.get()
    .then(projects=>{
        res.status(200).json(projects)
    })
+   .catch(next)
 })
 //GET with ID
 router.get('/:id', validateProjectId,async (req,res,next)=>{
@@ -42,39 +43,27 @@ router.put('/:id',validateProjectId,validateProject ,async (req,res,next)=>{
 })
 
 //DELETE id
-router.delete('/:id', async (req,res)=>{
-    const {id} = req.params
-    const project= await Projects.get(id)
+router.delete('/:id',validateProjectId, async (req,res,next)=>{
     try{
-        if(!project){
-            res.status(404).json({message:"could not find that ID "})
-        }else{
-            await Projects.remove(req.params.id)
-            res.json()
-        }
+        await Projects.remove(req.params.id)
+        res.json()
     }catch(err){
-        res.status(500).json({message:"Mean Error"})
+        next(err)
     }
 })
-router.get("/:id/actions",async(req,res)=>{
+router.get("/:id/actions",validateProjectId,async(req,res,next)=>{
     const {id}=req.params
     try{
-        const project = await Projects.get(id)
-        if(!project){
-            res.status(404).json({message:"could not find that ID "})
-        }else{
-            const actions = await Projects.getProjectActions(id)
-            res.json(actions)
-        }
+        const actions = await Projects.getProjectActions(id)
+        res.json(actions)
     }catch(err){
-        res.status(500).json({message:"Mean Error"})
+        next(err)
     }
 
 })
 router.use((err,req,res,next)=>{
     res.status(err.status || 500).json({
-      Message:"something went wrong",
-
+      message:"something went wrong",
     })
   })
 

@@ -24,40 +24,8 @@ async function validateProjectId(req, res, next) {
         next()
     }
 }
-
-  async function validateName(req, res, next) {
-    const {name} = req.body
-    if(!name) {
-      res.status(400).json({ message: "missing required name  field" })
-    }else{
-      req.name = name
-      next()
-    }
-  }
-  async function validateDescript(req, res, next) {
-    const {description} = req.body
-    if(!description) {
-      res.status(400).json({ message: "missing required description field" })
-    }else{
-      req.description = description
-      next()
-    }
-  }
-  async function validateCompleted(req, res, next) {
-    const {completed} = req.body
-    if(!completed) {
-      res.status(400).json({ message: "missing required completed field" })
-    }else{
-      req.completed = completed
-      next()
-    }
-  }
-
   module.exports = {
     validateProjectId,
-    validateName,
-    validateDescript,
-    validateCompleted,
     validateProject
     
   }

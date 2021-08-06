@@ -1,79 +1,60 @@
 // Write your "actions" router here!
 const express = require('express');
-
+const{validateActionId,validateActions}=require('./actions-middlware')
 const Action = require("./actions-model")
 
 const router= express.Router()
 
 //GET
-router.get('/',async (req,res)=>{
+router.get('/',async (req,res,next)=>{
+   try{
     const actions = await Action.get()
     res.json(actions)
+   }catch(err){
+       next(err)
+   }
 })
 //Get with ID
-router.get('/:id',async(req,res)=>{
-    const{id}=req.params
+router.get('/:id',validateActionId,async(req,res,next)=>{
     try{
-        const action= await Action.get(id);
-        if(!action){
-            res.status(404).json({message:"This is not an ID"})
-        }else{
-            res.json(action)
-        }
-    }catch{
-        res.status(500).json({message:"ERROR NOOOO!!!"})
+        res.json(req.action)
+    }catch(err){
+       next(err)
     }    
 })
 //POST
-router.post('/',async (req,res)=>{
-    const {description,notes} = req.body;
+router.post('/',validateActions,async (req,res,next)=>{
     try{
-        if(!notes || !description){
-            res.status(400).json({message:'please provide notes and description for the project'})
-        }else{
-            console.log(req.body)
-            const actions = await Action.insert(req.body)
+            const actions = await Action.insert({notes:req.notes,description:req.description,project_id:req.project_id})
             res.status(200).json(actions)
-        }
     }catch(err){
-        res.status(500).json({message:"no server"})
+        next(err)
     }
 })
 //PUT ID
-router.put('/:id',async(req,res)=>{
-    const {id} = req.params
-    const {description,notes,project_id } = req.body;
-    try{
-        const action= await Action.get(id);
-        if(!notes || !description || !project_id ){
-            res.status(400).json({message:'please provide notes, description for the project'})
-        }else{
-            if(!action){
-                res.status(404).json({message:"This is not an ID"})
-            }else{ 
-                const updatedAction = await Action.update(id,req.body)
-                res.json(updatedAction)
-            }
-        }
+router.put('/:id',validateActionId,validateActions,async(req,res,next)=>{
+    try{  
+        await Action.update(req.params.id,{notes:req.notes,description:req.description,project_id:req.project_id,completed:req.body.completed})
+        const updatedAction = await Action.get(req.params.id)
+        res.json(updatedAction)       
     }catch(err){
-        res.status(500).json({message:"no server"})
+        next(err)
     }
 })
 
-router.delete('/:id', async (req,res)=>{
-    const {id} = req.params
-    const action= await Action.get(id)
-    try{
-        if(!action){
-            res.status(404).json({message:"could not find that ID "})
-        }else{
-            await Action.remove(req.params.id)
-            res.json()
-        }
+router.delete('/:id',validateActionId, async (req,res,next)=>{
+    try{   
+        await Action.remove(req.params.id)
+        res.json()
     }catch(err){
-        res.status(500).json({message:"Mean Error"})
+        next(err)
     }
 })
+router.use((err,req,res,next)=>{
+    res.status(err.status || 500).json({
+      message:"something went wrong",
+    })
+  })
 
 
 module.exports = router
